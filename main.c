@@ -1,6 +1,11 @@
 #include <ncurses.h>
 #include <sys/time.h>
 
+enum bool
+{
+	false,
+	true
+};
 // In microseconds, equivalent to half a second
 #define TICK_DURATION 500000 
 
