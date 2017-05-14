@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include <ncurses.h>
+#include <string.h>
 #include <sys/time.h>
 
 // In microseconds, equivalent to half a second
@@ -7,10 +9,17 @@
 #define GRID_WIDTH 10
 #define GRID_HEIGHT 20
 
-typedef struct coords {
+typedef struct Coords {
     int x;
     int y;
-} coords;
+} Coords;
+
+typedef struct Piece {
+    Coords position;
+    char body[4][3];
+} Piece;
+
+int grid[GRID_WIDTH][GRID_HEIGHT];
 
 /*
  * Tests if game tick has elapsed
@@ -34,17 +43,43 @@ bool tick( struct timeval *t1, struct timeval *t2)
         return false;
 }
 
-void drawgrid(coords origin)
+void drawgrid(Coords origin, Piece p)
 {
+    //draw grid
     for(int x = 0; x < GRID_WIDTH; x++)
     {
         for(int y = 0; y < GRID_HEIGHT; y++)
+        {
             mvprintw(origin.y+y,origin.x+x,".");
+        }
+    }
+
+    //then draw piece
+    for(int x = 0; x < 4; x++)
+    {
+        for(int y = 0; y < 3; y++)
+        {
+            if(p.body[x][y])
+                mvprintw(p.position.y+x, p.position.x+y, "O");
+        }
     }
 }
 
 int main(int argc, char *argv[])
 {
+    //checks for version option from command line
+    for(int i = 1; i < argc; i++)
+    {
+        if(argv[i][0] == '-')
+        {
+            if( (argv[i][1] == '-' && strcmp(argv[i], "--version") == 0) || (argv[i][1] != '-' && strchr(argv[i], 'v')) )
+            {
+                printf("ncurses-tetris 0.1.0\n");
+                return 0;
+            }
+        }
+    }
+
     initscr();
     cbreak(); //disables line buffering
     noecho(); //disable getch() echo
@@ -55,11 +90,30 @@ int main(int argc, char *argv[])
     int max_y = 0;
     int max_x = 0;
 
+    //get window size
     getmaxyx(stdscr, max_y, max_x);
 
-    coords origin;
+    //initialize grid
+    memset(grid, 0, sizeof(int)*GRID_WIDTH*GRID_HEIGHT);
+
+    Coords origin;
     origin.x = (max_x-GRID_WIDTH)/2;
     origin.y = (max_y-GRID_HEIGHT)/2;
+
+    Coords spawn;
+    spawn.x = max_x/2;
+    spawn.y = origin.y;
+
+    Piece p;
+    p.position = spawn;
+    //make L-piece
+    memcpy(p.body, (char[4][3]) 
+    {
+        {0,0,0},
+        {0,1,0},
+        {0,1,0},
+        {0,1,1}
+    }, 4*3);
 
     int c;
 
@@ -95,8 +149,7 @@ int main(int argc, char *argv[])
         if( tick(&t,&z) )
         {
             gettimeofday(&t,NULL);
-            drawgrid(origin);  //draw current grid state
-            printw("tick!\n");
+            drawgrid(origin, p);  //draw current grid state
             //move piece down and check for complete lines
         }
 
